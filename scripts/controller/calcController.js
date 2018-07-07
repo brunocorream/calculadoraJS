@@ -1,5 +1,8 @@
 class CalcController {
     constructor() {
+        this._lastOperator = "";
+        this._lastNumber = "";
+        
         this._operation = [];
         this._locale = "pt-BR"; // O idioma de Data e hora que será usado (não ficar repetindo o código) = atributo
         this._displayCalcEl = document.querySelector("#display");
@@ -9,8 +12,25 @@ class CalcController {
         this.initialize();
         this.initButtonsEvents();
         this.addOperation();
-        this._lastOperator = "";
-        this._lastNumber = "";
+        this.initkeyboard();
+    }
+
+    pasteFromClipboard(){
+        document.addEventListener('paste', e =>{
+            let text = e.clipboardData.getData('Text'); // O Text é do próprio JS para informar que é um TEXTO e não imagem ou outra coisa embora possa receber números. 
+
+            console.log(text);
+        })
+    }
+
+    copyToClipboard(){
+
+        let input = document.createElement('input');
+        input.value = this.displayCalc;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("Copy");
+        input.remove();
     }
 
     initialize() {
@@ -23,6 +43,47 @@ class CalcController {
         }, 1000);
 
         this.setLastNumberToDisplay();
+        this.pasteFromClipboard();
+    }
+
+    initkeyboard() {
+        document.addEventListener("keyup", e => {
+            switch (e.key) {
+                case "Escape":
+                    this.clearAll();
+                    break;
+                case "Backspace":
+                    this.clearEntry();
+                    break;
+                case "+":
+                case "-":
+                case "*":
+                case "/":
+                case "%":
+                    this.addOperation(e.key);
+                    break;
+                case ".":
+                case ",":
+                    this.addDot(".");
+                    break;
+                case "Enter":
+                case "=":
+                    this.calc();
+                    break;
+                case "0":
+                case "1":
+                case "2":
+                case "3":
+                case "4":
+                case "5":
+                case "6":
+                case "7":
+                case "8":
+                case "9":
+                    this.addOperation(parseInt(e.key));
+                    break;
+            }
+        });
     }
 
     setDisplayDateTime() {
@@ -80,17 +141,14 @@ class CalcController {
         this._lastOperator = this.getlastItem();
 
         if (this._operation.length < 3) {
-
             let firstItem = this._operation[0];
             this._operation = [firstItem, this._lastOperator, this._lastNumber];
         }
 
         if (this._operation.length > 3) {
-
             last = this._operation.pop();
             this._lastNumber = this.getResult();
         } else if (this._operation.length == 3) {
-
             this._lastNumber = this.getlastItem(false);
         }
 
@@ -121,8 +179,7 @@ class CalcController {
         }
 
         if (!lastItem) {
-
-            lastItem = (isOperator) ? this._lastOperator : this.lastNumber;
+            lastItem = isOperator ? this._lastOperator : this.lastNumber;
         }
         return lastItem;
     }
@@ -151,7 +208,7 @@ class CalcController {
             } else {
                 //Entradas de Number
                 let newValue = this.getLastOperation().toString() + value.toString();
-                this.setLastOperation(parseFloat(newValue));
+                this.setLastOperation(newValue);
 
                 // Atualizar display
                 this.setLastNumberToDisplay();
@@ -159,19 +216,23 @@ class CalcController {
         }
     }
 
-
     addDot() {
         let lastOperation = this.getLastOperation();
 
+        if (
+            typeof lastOperation === "string" &&
+            lastOperation.split("").indexOf(".") > -1
+        )
+            return;
+
         if (this.isOperator(lastOperation) || !lastOperation) {
-            this.pushOperation('0.');
+            this.pushOperation("0.");
         } else {
-            this.setLastOperation(lastOperation.toString() + '.');
+            this.setLastOperation(lastOperation.toString() + ".");
         }
 
         this.setLastNumberToDisplay();
     }
-
 
     execBtn(value) {
         switch (value) {
@@ -215,8 +276,9 @@ class CalcController {
             case "9":
                 this.addOperation(parseInt(value));
                 break;
-            default:
-                this.setError();
+            
+            case 'c':
+                if (e.ctrlKey) this.copyToClipboard();
                 break;
         }
     }
