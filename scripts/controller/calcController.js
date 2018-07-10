@@ -1,5 +1,8 @@
 class CalcController {
     constructor() {
+        
+        this._audio = new Audio('click.mp3');
+        this._audioOnOff = false;
         this._lastOperator = "";
         this._lastNumber = "";
         
@@ -17,9 +20,11 @@ class CalcController {
 
     pasteFromClipboard(){
         document.addEventListener('paste', e =>{
+            
             let text = e.clipboardData.getData('Text'); // O Text é do próprio JS para informar que é um TEXTO e não imagem ou outra coisa embora possa receber números. 
 
-            console.log(text);
+            this.displayCalc = parseFloat(text);
+            
         })
     }
 
@@ -44,10 +49,36 @@ class CalcController {
 
         this.setLastNumberToDisplay();
         this.pasteFromClipboard();
+
+
+        // Controla o ligar/desligar do áudio
+        document.querySelectorAll('.btn-ac').forEach(btn => {
+            btn.addEventListener('dblclick', e => {
+                this.toggleAudio();
+            });
+        });
+    }
+
+    toggleAudio(){
+        
+        this._audioOnOff = !this._audioOnOff;
+    }
+
+    playAudio(){
+        
+        if (this._audioOnOff) {
+
+            this._audio.currentTime = 0;
+            this._audio.play();
+        }
     }
 
     initkeyboard() {
+        
         document.addEventListener("keyup", e => {
+
+            this.playAudio();
+
             switch (e.key) {
                 case "Escape":
                     this.clearAll();
@@ -132,7 +163,14 @@ class CalcController {
     }
 
     getResult() {
-        return eval(this._operation.join(""));
+
+        try{
+            return eval(this._operation.join(""));
+        }catch(e){
+            setTimeout(() => {
+
+            }), 1;
+        }
     }
 
     calc() {
@@ -235,6 +273,9 @@ class CalcController {
     }
 
     execBtn(value) {
+
+        this.playAudio();
+
         switch (value) {
             case "ac":
                 this.clearAll();
@@ -324,6 +365,12 @@ class CalcController {
     }
 
     set displayCalc(value) {
+
+        if(value.toString().length > 10){
+            this.setError();
+            return false;
+        }
+
         this._displayCalcEl.innerHTML = value;
     }
 
